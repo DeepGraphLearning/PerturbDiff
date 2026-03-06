@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PerturbDiff-Refactor Interactive Explorer</title>
+  <title>PerturbDiff Interactive Explorer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
@@ -334,8 +334,8 @@
   <div class="app">
     <header class="topbar">
       <div>
-        <div class="title">PerturbDiff-Refactor Interactive Explorer</div>
-        <div class="sub">A clickable code map for `new_configs` + `new_src`</div>
+        <div class="title">PerturbDiff Interactive Explorer</div>
+        <div class="sub">A clickable code map for `configs` + `src`</div>
       </div>
       <div class="badge">Keyboard: `f` focus search, `[`/`]` flow step</div>
     </header>
@@ -384,7 +384,7 @@
         <div class="tags" id="detail-tags"></div>
         <div class="desc" id="detail-desc">This area shows the module's role in the repository.</div>
         <div class="code"><pre id="detail-code">// waiting for selection...</pre></div>
-        <div class="footnote" id="detail-footnote">Tip: start with `new_src/apps/rawdata/rawdata_diffusion_training.py`.</div>
+        <div class="footnote" id="detail-footnote">Tip: start with `src/apps/rawdata/rawdata_diffusion_training.py`.</div>
       </aside>
     </main>
   </div>
@@ -392,112 +392,112 @@
   <script>
     const FILES = [
       {
-        path: "new_configs/rawdata_diffusion_training.yaml",
-        group: "new_configs",
+        path: "configs/rawdata_diffusion_training.yaml",
+        group: "configs",
         title: "Training Top Config",
         tags: ["hydra", "entry", "training"],
         desc: "Top-level training config that composes trainer/lightning/data/model/optimization/path/cov_encoding.",
         code: `defaults:\n  - trainer: base\n  - lightning: base\n  - data: pbmc\n  - optimization: base\n  - path: trixie_path\n  - model: base\n  - cov_encoding: trixie_onehot\nrun_name: pbmc_from_scratch`
       },
       {
-        path: "new_configs/rawdata_diffusion_sampling.yaml",
-        group: "new_configs",
+        path: "configs/rawdata_diffusion_sampling.yaml",
+        group: "configs",
         title: "Sampling Top Config",
         tags: ["hydra", "entry", "sampling"],
         desc: "Top-level sampling config defining checkpoint/device/DDIM-DDPM and output format.",
         code: `model_checkpoint_path: null\ndevice: auto\nsampling:\n  use_ddim: true\n  num_sampled_batches: 4\n  batch_size: ${"${..optimization.micro_batch_size}"}\n  output_format: npz`
       },
       {
-        path: "new_configs/model/base.yaml",
-        group: "new_configs",
+        path: "configs/model/base.yaml",
+        group: "configs",
         title: "Model Base",
         tags: ["cross_dit", "diffusion", "hyperparams"],
         desc: "Base Cross-DiT parameters and diffusion process hyperparameters.",
         code: `model_type: Cross_DiT\ninput_dim: 2000\ndit_depth: 8\ndit_num_heads: 8\nsteps: 1000\nnoise_schedule: linear\np_drop_cond: 0.5\np_drop_control: 0.5`
       },
       {
-        path: "new_src/apps/rawdata/rawdata_diffusion_training.py",
-        group: "new_src/apps",
+        path: "src/apps/rawdata/rawdata_diffusion_training.py",
+        group: "src/apps",
         title: "Training Entrypoint",
         tags: ["hydra.main", "trainer.fit", "pipeline"],
         desc: "Training entrypoint: resolve cfg -> setup trainer/datamodule/model -> run_pipeline.",
         code: `@hydra.main(..., config_name=\"rawdata_diffusion_training\")\ndef main(cfg):\n  trainer = setup_trainer(cfg)\n  datamodule = build_datamodule(cfg, logger)\n  populate_covariate_cfg(cfg, datamodule)\n  model = build_model(cfg, logger, datamodule)\n  run_pipeline(trainer, model, datamodule, cfg, logger)`
       },
       {
-        path: "new_src/apps/training/training_runtime.py",
-        group: "new_src/apps/training",
+        path: "src/apps/training/training_runtime.py",
+        group: "src/apps/training",
         title: "Trainer Runtime",
         tags: ["pytorch_lightning", "callbacks", "strategy"],
         desc: "Builds the Lightning Trainer from config with callbacks/logger/profiler/strategy.",
         code: `def setup_trainer(cfg):\n  trainer_logger = hydra.utils.instantiate(cfg.lightning.logger)\n  strategy = resolve_trainer_strategy(cfg)\n  callbacks = build_callbacks(cfg, trainer_logger)\n  return pl.Trainer(**cfg.trainer, callbacks=callbacks, strategy=strategy, logger=trainer_logger)`
       },
       {
-        path: "new_src/apps/training/training_datamodule_builder.py",
-        group: "new_src/apps/training",
+        path: "src/apps/training/training_datamodule_builder.py",
+        group: "src/apps/training",
         title: "Datamodule Builder",
         tags: ["dataset selection", "cov dicts"],
         desc: "Selects DataModule subclass by data_name and writes pert/celltype/batch dictionaries back to cfg.cov_encoding.",
         code: `if cfg.data.data_name == \"PBMCFinetune\":\n  datamodule = PBMCPerturbationDataModule(...)\n...\ncfg.cov_encoding.num_pert = len(datamodule.pert_dict)\ncfg.model.dataset_dict = datamodule.original_dataset_name_list`
       },
       {
-        path: "new_src/apps/training/training_pipeline.py",
-        group: "new_src/apps/training",
+        path: "src/apps/training/training_pipeline.py",
+        group: "src/apps/training",
         title: "Training Pipeline",
         tags: ["fit", "validate", "checkpoint"],
         desc: "Controls fit/validate execution order, including final checkpoint saving.",
         code: `if not validate_only:\n  trainer.fit(...)\n  trainer.save_checkpoint(cfg.save_dir_path, weights_only=True)\n  trainer.validate(..., ckpt_path=\"best\")\nelse:\n  trainer.validate(..., ckpt_path=cfg.model.ckpt_path)`
       },
       {
-        path: "new_src/apps/rawdata/rawdata_diffusion_sampling.py",
-        group: "new_src/apps",
+        path: "src/apps/rawdata/rawdata_diffusion_sampling.py",
+        group: "src/apps",
         title: "Sampling Entrypoint",
         tags: ["sampling", "checkpoint", "generation"],
         desc: "Sampling entrypoint: build datamodule, load_from_checkpoint, and run generate_samples.",
         code: `@hydra.main(..., config_name=\"rawdata_diffusion_sampling\")\ndef main(cfg):\n  datamodule = build_sampling_datamodule(cfg, logger)\n  model = load_sampling_model(cfg, logger, datamodule)\n  truths, samples, trajectories, decoded = generate_samples(...)`
       },
       {
-        path: "new_src/apps/sampling/sampling_generation.py",
-        group: "new_src/apps/sampling",
+        path: "src/apps/sampling/sampling_generation.py",
+        group: "src/apps/sampling",
         title: "Sampling Generation Core",
         tags: ["DDIM", "DDPM", "h5ad"],
         desc: "Core sampling loop: read dataloader -> build self_condition -> run DDIM/DDPM -> aggregate and evaluate.",
         code: `sample_fn, kwargs = resolve_sampling_runner(cfg, diffusion, use_ddim)\nsample, traj = sample_fn(model.model, shape, self_condition=self_condition, **kwargs)\nr2_metric = r2_score(truth_np.mean(0), sample_np.mean(0))\nsave_adata(pred_adata, true_adata, cfg, logger)`
       },
       {
-        path: "new_src/data/data_module/data_module.py",
-        group: "new_src/data",
+        path: "src/data/data_module/data_module.py",
+        group: "src/data",
         title: "DataModule Hierarchy",
         tags: ["dataloader", "split", "sampler"],
         desc: "DataModule inheritance chain and dataloader construction; switches split_pbmc/split_tahoe100m/split_cellxgene by scenario.",
         code: `class PretrainingDataModule(pl.LightningDataModule): ...\nclass PBMCPerturbationDataModule(PretrainingDataModule): ...\nclass Tahoe100mPerturbationDataModule(PBMCPerturbationDataModule): ...\nclass PerturbationPretrainingDataModule(CellxGeneDataModule): ...`
       },
       {
-        path: "new_src/models/lightning/lightning_module.py",
-        group: "new_src/models/lightning",
+        path: "src/models/lightning/lightning_module.py",
+        group: "src/models/lightning",
         title: "PlModel",
         tags: ["training_step", "validation_step", "optimizers"],
         desc: "Training model wrapper: covariate encoding, loss computation, logging, and optimizer/scheduler config.",
         code: `loss_dict = self._compute_loss(batch)\nloss = (loss_dict[\"loss\"] * loss_dict[\"weights\"]).mean()\nself.log_data(...)\n...\nreturn [opt_main], [{\"scheduler\": sched_main, \"interval\": \"step\"}]`
       },
       {
-        path: "new_src/models/lightning/lightning_factories.py",
-        group: "new_src/models/lightning",
+        path: "src/models/lightning/lightning_factories.py",
+        group: "src/models/lightning",
         title: "Factories",
         tags: ["create_diffusion", "model_init", "sampler"],
         desc: "Model and diffusion factories: Cross_DiT initialization, beta schedule, and schedule sampler.",
         code: `def model_init_fn(model_cfg):\n  if model_type == \"cross_dit\": return Cross_DiT(model_cfg)\n\ndef create_diffusion(model_cfg):\n  betas = get_named_beta_schedule(...)\n  return GaussianDiffusion(...)`
       },
       {
-        path: "new_src/models/diffusion/diffusion_core.py",
-        group: "new_src/models/diffusion",
+        path: "src/models/diffusion/diffusion_core.py",
+        group: "src/models/diffusion",
         title: "GaussianDiffusion Core",
         tags: ["q_sample", "posterior", "math"],
         desc: "Core diffusion math object defining key transforms like q_sample and q_posterior.",
         code: `class GaussianDiffusion(...):\n  def q_sample(self, x_start, t, noise=None):\n    return sqrt(alpha_bar)*x_start + sqrt(1-alpha_bar)*noise`
       },
       {
-        path: "new_src/models/diffusion/diffusion_training.py",
-        group: "new_src/models/diffusion",
+        path: "src/models/diffusion/diffusion_training.py",
+        group: "src/models/diffusion",
         title: "Diffusion Training Mixin",
         tags: ["training_losses", "MMD", "self-conditioning"],
         desc: "Training loss composition: Cross-DiT dual-branch outputs + MSE/MMD + condition dropping + self-conditioning.",
@@ -524,7 +524,7 @@
 
     const GRAPH = {
       nodes: [
-        {id: "cfg", x: 36, y: 24, w: 140, h: 40, label: "new_configs"},
+        {id: "cfg", x: 36, y: 24, w: 140, h: 40, label: "configs"},
         {id: "apps", x: 222, y: 24, w: 170, h: 40, label: "apps/rawdata"},
         {id: "runtime", x: 430, y: 24, w: 170, h: 40, label: "training_runtime"},
         {id: "data", x: 222, y: 126, w: 170, h: 40, label: "data_module"},
@@ -551,11 +551,11 @@
         ]
       },
       baseMapping: {
-        runtime: "new_src/apps/training/training_runtime.py",
-        data: "new_src/data/data_module/data_module.py",
-        lightning: "new_src/models/lightning/lightning_module.py",
-        diff: "new_src/models/diffusion/diffusion_training.py",
-        sampling: "new_src/apps/sampling/sampling_generation.py"
+        runtime: "src/apps/training/training_runtime.py",
+        data: "src/data/data_module/data_module.py",
+        lightning: "src/models/lightning/lightning_module.py",
+        diff: "src/models/diffusion/diffusion_training.py",
+        sampling: "src/apps/sampling/sampling_generation.py"
       }
     };
 
@@ -807,21 +807,21 @@
 
     function relatedPaths(path) {
       const map = {
-        "new_src/apps/rawdata/rawdata_diffusion_training.py": [
-          "new_src/apps/training/training_runtime.py",
-          "new_src/apps/training/training_datamodule_builder.py",
-          "new_src/apps/training/training_pipeline.py"
+        "src/apps/rawdata/rawdata_diffusion_training.py": [
+          "src/apps/training/training_runtime.py",
+          "src/apps/training/training_datamodule_builder.py",
+          "src/apps/training/training_pipeline.py"
         ],
-        "new_src/models/lightning/lightning_module.py": [
-          "new_src/models/lightning/lightning_factories.py",
-          "new_src/models/diffusion/diffusion_training.py"
+        "src/models/lightning/lightning_module.py": [
+          "src/models/lightning/lightning_factories.py",
+          "src/models/diffusion/diffusion_training.py"
         ],
-        "new_src/apps/sampling/sampling_generation.py": [
-          "new_src/apps/rawdata/rawdata_diffusion_sampling.py",
-          "new_src/apps/sampling/sampling_io.py"
+        "src/apps/sampling/sampling_generation.py": [
+          "src/apps/rawdata/rawdata_diffusion_sampling.py",
+          "src/apps/sampling/sampling_io.py"
         ]
       };
-      return map[path] || ["new_configs/model/base.yaml", "new_configs/optimization/base.yaml"];
+      return map[path] || ["configs/model/base.yaml", "configs/optimization/base.yaml"];
     }
 
     function renderFlow() {
@@ -841,14 +841,14 @@
       const flow = FLOWS[state.flowType];
       const step = flow[state.flowStep];
       const hintMap = {
-        "Resolve Hydra": "new_configs/rawdata_diffusion_training.yaml",
-        "Setup Trainer": "new_src/apps/training/training_runtime.py",
-        "Build Data": "new_src/data/data_module/data_module.py",
-        "Build Model": "new_src/models/lightning/lightning_module.py",
-        "Run Pipeline": "new_src/apps/training/training_pipeline.py",
-        "Load CKPT": "new_src/apps/sampling/sampling_setup.py",
-        "Generate": "new_src/apps/sampling/sampling_generation.py",
-        "Save h5ad": "new_src/apps/sampling/sampling_io.py"
+        "Resolve Hydra": "configs/rawdata_diffusion_training.yaml",
+        "Setup Trainer": "src/apps/training/training_runtime.py",
+        "Build Data": "src/data/data_module/data_module.py",
+        "Build Model": "src/models/lightning/lightning_module.py",
+        "Run Pipeline": "src/apps/training/training_pipeline.py",
+        "Load CKPT": "src/apps/sampling/sampling_setup.py",
+        "Generate": "src/apps/sampling/sampling_generation.py",
+        "Save h5ad": "src/apps/sampling/sampling_io.py"
       };
       const target = hintMap[step.title];
       if (target && byPath(target)) {
@@ -865,12 +865,12 @@
       archEl.appendChild(defs);
       const nodePathByFlow = {
         training: {
-          cfg: "new_configs/rawdata_diffusion_training.yaml",
-          apps: "new_src/apps/rawdata/rawdata_diffusion_training.py"
+          cfg: "configs/rawdata_diffusion_training.yaml",
+          apps: "src/apps/rawdata/rawdata_diffusion_training.py"
         },
         sampling: {
-          cfg: "new_configs/rawdata_diffusion_sampling.yaml",
-          apps: "new_src/apps/rawdata/rawdata_diffusion_sampling.py"
+          cfg: "configs/rawdata_diffusion_sampling.yaml",
+          apps: "src/apps/rawdata/rawdata_diffusion_sampling.py"
         }
       };
       const activeEdges = GRAPH.edgesByFlow[state.flowType] || GRAPH.edgesByFlow.training;
