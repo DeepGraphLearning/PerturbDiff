@@ -4,7 +4,7 @@
 
 [![pytorch](https://img.shields.io/badge/PyTorch_2.2+-ee4c2c?logo=pytorch&logoColor=white)](https://pytorch.org/get-started/locally/)
 ![license](https://img.shields.io/badge/License-MIT-green.svg?labelColor=gray)
-[![arxiv](http://img.shields.io/badge/arxiv-2408.12373-yellow.svg)](https://arxiv.org/html/2602.19685v1)
+[![arxiv](http://img.shields.io/badge/arxiv-2602.19685-yellow.svg)](https://arxiv.org/html/2602.19685v1)
 
 </div>
 
