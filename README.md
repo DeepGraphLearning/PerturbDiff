@@ -86,6 +86,7 @@ This repository contains the refactored runtime used for large-scale pretraining
 
 - 2026-03-06: Releease all codes.
 - 2026-03-05: Release all data and ckpts on HuggingFace.
+- 2026-02-23: Paper released on Arxiv.
 
 ## File Structure
 
