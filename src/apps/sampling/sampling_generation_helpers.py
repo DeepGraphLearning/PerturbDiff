@@ -52,10 +52,22 @@ def load_selected_genes(cfg):
     if hasattr(cfg.data, "sample_tahoe100m_only") and cfg.data.sample_tahoe100m_only:
         cfg.data.selected_gene_file = cfg.data.tahoe100m.selected_gene_file
     if hasattr(cfg.data, "sample_replogle_only") and cfg.data.sample_replogle_only:
+        if cfg.data.selected_gene_file != cfg.data.replogle.selected_gene_file:
+            logger.info(
+                "Using Replogle 2000-HVG selected-gene file for sampling output: %s",
+                cfg.data.replogle.selected_gene_file,
+            )
         cfg.data.selected_gene_file = cfg.data.replogle.selected_gene_file
     with open(cfg.data.selected_gene_file, "rb") as fin:
         genes = pickle.load(fin)
-    assert len(genes) == 2000
+    if len(genes) != 2000:
+        raise ValueError(
+            "Sampling output/evaluation expects a 2000-gene benchmark file, "
+            f"but {cfg.data.selected_gene_file} contains {len(genes)} genes. "
+            "For Replogle finetuned checkpoints, keep model/data input overrides "
+            "at 12626 genes and set data.sample_replogle_only=true so outputs are "
+            "restricted to replogle_real_selected_genes.pkl."
+        )
     return genes
 
 

@@ -567,7 +567,43 @@ $COMMON_PBMC_TRAIN \
 $NO_WANDB
 ```
 
-### 2.2) Experimental Inference-Only API
+### 2.2) Sampling on Replogle Finetuned Checkpoint
+
+The released Replogle finetuned checkpoint uses the 12626-gene unified vocabulary
+for model input/output projections. During benchmark sampling, the script samples in
+that 12626-gene space first, then restricts predictions and labels to the 2000
+Replogle HVGs in `replogle_real_selected_genes.pkl` for evaluation. Keep
+`data.sample_replogle_only=true`; this flag is required for both Replogle-only
+sampling and the final 2000-HVG output selection.
+
+```bash
+CKPT_PATH=${ROOT_PATH}perturb_ckpt/release_ckpt/finetuned_replogle.ckpt
+
+REPLOGLE_FINETUNE_SAMPLING_EXTRA="
+model_checkpoint_path=$CKPT_PATH
+data=tahoe100m_pbmc_replogle_pretrain_cellxgene
+data.sample_replogle_only=true
+cov_encoding.celltype_encoding=llm
+cov_encoding.replogle_gene_encoding=genept
+cov_encoding.replace_pert_dict=true
+sampling.num_sampled_batches=null
+"
+
+python ./src/apps/run/rawdata_diffusion_sampling.py \
+$COMMON_SAMPLING \
+$REPLOGLE_FINETUNE_SAMPLING_EXTRA \
+$COMMON_MODEL_12626 \
+$COMMON_REPLOGLE_TRAIN \
+$NO_WANDB
+```
+
+Do not replace the final selected-gene file with
+`merged_pbmc_tahoe_rep_cellxgene_genes_mapped.pkl` for this benchmark output. That
+merged file is the 12626-gene model vocabulary; the saved `diffusion_predict*.h5ad`
+and `diffusion_true*.h5ad` files are expected to have 2000 genes after HVG
+restriction.
+
+### 2.3) Experimental Inference-Only API
 
 For users who want to provide their own control-cell `.h5ad` and sample a supported perturbation condition without benchmark labels, use:
 
