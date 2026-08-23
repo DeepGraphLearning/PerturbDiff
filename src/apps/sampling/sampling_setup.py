@@ -6,6 +6,51 @@ from src.data import data_module
 from src.models.lightning.lightning_module import PlModel
 
 
+def _override_covariate_embedding_paths(cov_cfg, runtime_cov_cfg):
+    """Patch checkpoint covariate asset paths with runtime paths when provided."""
+    if cov_cfg is None or runtime_cov_cfg is None:
+        return cov_cfg
+    for key in [
+        "celltype_embedding_path",
+        "gene_embedding_path",
+        "pert_embedding_path",
+        "drug_embedding_path",
+        "replogle_gene_embedding_path",
+    ]:
+        val = runtime_cov_cfg.get(key, None)
+        if val is not None:
+            cov_cfg[key] = val
+    return cov_cfg
+
+
+def _apply_checkpoint_shape_patches(model, state_dict, logger):
+    """Apply finetune-time projection replacement before strict state loading."""
+    final_weight = state_dict.get("model.final_layer.linear.weight")
+    if final_weight is None:
+        return
+
+    checkpoint_output_size = int(final_weight.shape[0])
+    current_output_size = int(model.model.output_size)
+    if checkpoint_output_size == current_output_size:
+        return
+
+    if getattr(model.model_cfg, "replace_2kgene_layer", False) or getattr(
+        model.model_cfg, "replace_1w2gene_layer", False
+    ):
+        model.model.replace_2kgene_layer(new_input_size=checkpoint_output_size)
+        logger.info(
+            "Applied checkpoint projection replacement for sampling: %s -> %s genes",
+            current_output_size,
+            checkpoint_output_size,
+        )
+        return
+
+    raise RuntimeError(
+        "Checkpoint projection shape does not match initialized model "
+        f"({checkpoint_output_size} vs {current_output_size}) and no replacement flag is set."
+    )
+
+
 def build_sampling_datamodule(cfg, logger):
     """
     Build sampling datamodule.
@@ -87,17 +132,21 @@ def load_sampling_model(cfg, logger, datamodule):
     
     # using the training setting
     needs_cov = needs_model = needs_opt = True
-    hparams["cov_encoding_cfg"]["celltype_encoding"] = cfg.cov_encoding.celltype_encoding
+    cov_cfg = hparams["cov_encoding_cfg"] if needs_cov else cfg.cov_encoding
+    model_cfg = hparams["model_cfg"] if needs_model else cfg.model
+    optimizer_cfg = hparams["optimizer_cfg"] if needs_opt else cfg.optimization
 
-    model = PlModel.load_from_checkpoint(
-        cfg.model_checkpoint_path,
-        cov_encoding_cfg=hparams["cov_encoding_cfg"] if needs_cov else cfg.cov_encoding,
-        model_cfg=hparams["model_cfg"] if needs_model else cfg.model,
-        optimizer_cfg=hparams["optimizer_cfg"] if needs_opt else cfg.optimization,
+    cov_cfg = _override_covariate_embedding_paths(cov_cfg, cfg.cov_encoding)
+    cov_cfg["celltype_encoding"] = cfg.cov_encoding.celltype_encoding
+
+    model = PlModel(
+        cov_encoding_cfg=cov_cfg,
+        model_cfg=model_cfg,
+        optimizer_cfg=optimizer_cfg,
         py_logger=logger,
         trainer_cfg=cfg.trainer,
         all_split_names=datamodule.all_split_names,
-        map_location="cuda:0" if torch.cuda.is_available() else "cpu",
-        weights_only=False,
     )
+    _apply_checkpoint_shape_patches(model, ckpt["state_dict"], logger)
+    model.load_state_dict(ckpt["state_dict"], strict=True)
     return model

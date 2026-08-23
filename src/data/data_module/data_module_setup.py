@@ -176,6 +176,7 @@ def perturbation_pretraining_setup_dataset(dm, stage=None):
         x: None if y == "RNA-seq" else z["control_pert"]
         for x, y, z in zip(dm.dataset_name_list, dm.data_type_list, dm.key_info_list)
     }
+    active_dataset_names = set(dm.dataset_name_list)
 
     exist_flag = False
     if dm.data_args.data_name == "Tahoe100mPBMCReplogleCellxGenePretrain":
@@ -286,9 +287,19 @@ def perturbation_pretraining_setup_dataset(dm, stage=None):
             dm.py_logger.info(f"Processed {split_stage}: loading from cached split indices")
             with open(split_indices_cache_file, "rb") as fin:
                 split_indices = pickle.load(fin)
+            split_indices = {
+                dataset_name: indices
+                for dataset_name, indices in split_indices.items()
+                if dataset_name in active_dataset_names
+            }
             setattr(dm, f"{split_stage}_indices", split_indices)
             with open(split_num_cell_cache_file, "rb") as fin:
                 split_num_cell = pickle.load(fin)
+            split_num_cell = {
+                dataset_name: num_cell
+                for dataset_name, num_cell in split_num_cell.items()
+                if dataset_name in active_dataset_names
+            }
             setattr(dm, f"{split_stage}_num_cell", split_num_cell)
 
     for split_stage in ["train"] + dm.all_split_names:
@@ -501,9 +512,9 @@ def perturbation_pretraining_setup(dm, stage=None):
         dm.data_type_list = np.array(dm.data_type_list)[mask].tolist()
         dm.key_info_list = np.array(dm.key_info_list)[mask].tolist()
         new_selected_genes_list = []
-        for ms in mask:
+        for idx, ms in enumerate(mask):
             if ms:
-                new_selected_genes_list.append(dm.selected_genes_list[ms])
+                new_selected_genes_list.append(dm.selected_genes_list[idx])
         dm.selected_genes_list = new_selected_genes_list
 
     if hasattr(dm.data_args, "sample_tahoe100m_only") and dm.data_args.sample_tahoe100m_only:
@@ -513,9 +524,9 @@ def perturbation_pretraining_setup(dm, stage=None):
         dm.data_type_list = np.array(dm.data_type_list)[mask].tolist()
         dm.key_info_list = np.array(dm.key_info_list)[mask].tolist()
         new_selected_genes_list = []
-        for ms in mask:
+        for idx, ms in enumerate(mask):
             if ms:
-                new_selected_genes_list.append(dm.selected_genes_list[ms])
+                new_selected_genes_list.append(dm.selected_genes_list[idx])
         dm.selected_genes_list = new_selected_genes_list
 
     skip_tahoe100m = hasattr(dm.data_args, "skip_tahoe100m") and dm.data_args.skip_tahoe100m
@@ -543,9 +554,9 @@ def perturbation_pretraining_setup(dm, stage=None):
         dm.data_type_list = np.array(dm.data_type_list)[mask].tolist()
         dm.key_info_list = np.array(dm.key_info_list)[mask].tolist()
         new_selected_genes_list = []
-        for ms in mask:
+        for idx, ms in enumerate(mask):
             if ms:
-                new_selected_genes_list.append(dm.selected_genes_list[ms])
+                new_selected_genes_list.append(dm.selected_genes_list[idx])
         dm.selected_genes_list = new_selected_genes_list
 
     if dm.replace_pert_dict:

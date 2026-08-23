@@ -118,7 +118,16 @@ def collect_batch_covariates(batch_data, dataloader, datamodule, mask):
 def load_ctrl_adata(cfg):
     """Execute `load_ctrl_adata` and return values used by downstream logic."""
     var_index = None
-    if "replogle" in cfg.data.data_name.lower() and (not cfg.data.sample_pbmc_only):
+    if hasattr(cfg.data, "sample_tahoe100m_only") and cfg.data.sample_tahoe100m_only:
+        ctrl_adata = anndata.read_h5ad(cfg.path.tahoe100m_ctrl_h5ad)
+    elif hasattr(cfg.data, "sample_replogle_only") and cfg.data.sample_replogle_only:
+        ctrl_adata = anndata.read_h5ad(cfg.path.replogle_ctrl_h5ad)
+        ctrl_adata = ctrl_adata[ctrl_adata.obs.cell_line == "hepg2"]
+        ctrl_adata = ctrl_adata[ctrl_adata.obs.gene == "non-targeting"]
+        assert len(ctrl_adata) == 4976
+    elif hasattr(cfg.data, "sample_pbmc_only") and cfg.data.sample_pbmc_only:
+        ctrl_adata = anndata.read_h5ad(cfg.path.pbmc_ctrl_h5ad)
+    elif "replogle" in cfg.data.data_name.lower() and (not cfg.data.sample_pbmc_only):
         ctrl_adata = anndata.read_h5ad(cfg.path.replogle_ctrl_h5ad)
         ctrl_adata = ctrl_adata[ctrl_adata.obs.cell_line == "hepg2"]
         ctrl_adata = ctrl_adata[ctrl_adata.obs.gene == "non-targeting"]
