@@ -567,6 +567,27 @@ $COMMON_PBMC_TRAIN \
 $NO_WANDB
 ```
 
+### 2.2) Experimental Inference-Only API
+
+For users who want to provide their own control-cell `.h5ad` and sample a supported perturbation condition without benchmark labels, use:
+
+```bash
+python ./src/apps/run/predict_h5ad.py \
+  --checkpoint ${ROOT_PATH}perturb_ckpt/release_ckpt/finetuned_tahoe100m.ckpt \
+  --selected-gene-file ${ROOT_PATH}perturb_data/selected_genes/tahoe100m_real_selected_genes.pkl \
+  --input-h5ad /path/to/control_cells.h5ad \
+  --output-h5ad /path/to/predicted_cells.h5ad \
+  --perturbation "[('Dexamethasone', 0.5, 'uM')]" \
+  --cell-type oocyte \
+  --gene-column feature_name \
+  --batch-size 128 \
+  --start-time 100
+```
+
+The notebook `examples/inference_only_tahoe_issue1_demo.ipynb` gives a Colab-style demo using the public CellxGene `.h5ad` linked in issue #1.
+
+This API is intentionally strict: the perturbation and cell type must exist in the checkpoint covariate vocabulary, and the input genes are aligned to the checkpoint selected-gene file. The Tahoe checkpoint is a drug-perturbation checkpoint; it is not a gene-knockout zero-shot model. Novel `.h5ad` inputs should be treated as out-of-distribution inference unless they match the supported checkpoint setting.
+
 
 ### 3) Pretraining
 
